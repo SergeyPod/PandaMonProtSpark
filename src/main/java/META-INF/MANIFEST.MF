@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: spark-assembly-1.6.0-SNAPSHOT-hadoop2.6.0.jar ojdbc6.jar
+Main-Class: StubApp
+

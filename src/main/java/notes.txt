@@ -1,0 +1,167 @@
+Tables for the Error Page:
+COMBINED_WAIT_ACT_DEF_ARCH4, (Jobsarchived - with deep queries), Cloudconfig, Schedconfig,
+
+Function involved:
+cleanJobList, isEventService, taskNameDict, dashTaskSummary
+
+
+
+https://aipanda022.cern.ch/errors/?jobtype=analysis&sortby=count
+http://bigpanda.cern.ch/errors/?sortby=count&computingsite=RAL-LCG2_MCORE
+http://bigpanda.cern.ch/jobs/errors/?sortby=count&computingsite=IEPSAS-Kosice_MCORE&jobstatus=failed&hours=3
+http://bigpanda.cern.ch/errors/?sortby=count&produsername=shaun
+http://bigpanda.cern.ch/errors/?sortby=count&computingsite=ANALY_GRIF-LAL
+http://bigpanda.cern.ch/errors/?sortby=count&jobstatus=failed&transexitcode=135&hours=3&display_limit=100
+http://bigpanda.cern.ch/jobs/errors/?sortby=count&computingsite=FMPhI-UNIBA&jobstatus=failed&hours=3
+http://bigpanda.cern.ch/errors/?sortby=count&produsername=Anthony
+http://bigpanda.cern.ch/jobs/errors/?sortby=count&computingsite=ANALY_LPC&jobstatus=cancelled&hours=3
+http://bigpanda.cern.ch/errors/?sortby=count&computingsite=CA-MCGILL-CLUMEQ-T2
+http://bigpanda.cern.ch/errors/?sortby=count&specialhandling=ddm:rucio
+http://bigpanda.cern.ch/errors/?sortby=count&produsername=Denys
+http://bigpanda.cern.ch/errors/?sortby=count&jeditaskid=5364658
+http://bigpanda.cern.ch/jobs/errors/?sortby=count&computingsite=ANALY_DESY-ZN&jobstatus=failed&hours=3
+http://bigpanda.cern.ch/jobs/errors/?sortby=count&computingsite=HPC2N_MCORE&jobstatus=failed&hours=3
+http://bigpanda.cern.ch/errors/?jeditaskid=5363703
+http://bigpanda.cern.ch/errors/?sortby=count&computingsite=ANALY_FZK_SHORT
+http://bigpanda.cern.ch/errors/?sortby=count&computingsite=ARNES_MCORE
+http://bigpanda.cern.ch/errors/?sortby=count&jeditaskid=5365535
+http://bigpanda.cern.ch/errors/?sortby=count&jeditaskid=5363639
+
+https://pythagoreanscript.wordpress.com/2015/05/28/iterate-through-a-spark-dataframe-using-its-partitions-in-java/
+https://github.com/apache/spark/blob/master/examples/src/main/java/org/apache/spark/examples/streaming/JavaSqlNetworkWordCount.java
+http://stackoverflow.com/questions/31572880/spark-dataframe-created-from-javarddrow-copies-all-columns-data-into-first-col
+
+http://stackoverflow.com/questions/32607414/spark-rdd-to-dataframe-with-schema-specifying
+http://spark.apache.org/docs/latest/sql-programming-guide.html#programmatically-specifying-the-schema
+
+
+def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
+
+    for job in jobs:
+        if isEventService(job):
+            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 111:
+                job['taskbuffererrordiag'] = 'Rerun scheduled to pick up unprocessed events'
+                job['piloterrorcode'] = 0
+                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+#                job['jobstatus'] = 'finished'
+            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 112:
+                job['taskbuffererrordiag'] = 'All events processed, merge job created'
+                job['piloterrorcode'] = 0
+                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+                job['jobstatus'] = 'finished'
+            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 114:
+                job['taskbuffererrordiag'] = 'No rerun to pick up unprocessed, at max attempts'
+                job['piloterrorcode'] = 0
+                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+#                job['jobstatus'] = 'finished'
+            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 115:
+                job['taskbuffererrordiag'] = 'No events remaining, other jobs still processing'
+                job['piloterrorcode'] = 0
+                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+                job['jobstatus'] = 'finished'
+            if 'taskbuffererrorcode' in job and job['taskbuffererrorcode'] == 116:
+                job['taskbuffererrordiag'] = 'No remaining event ranges to allocate'
+                job['piloterrorcode'] = 0
+                job['piloterrordiag'] = 'Job terminated by signal from PanDA server'
+                job['jobstatus'] = 'finished'
+            if 'jobmetrics' in job:
+                pat = re.compile('.*mode\=([^\s]+).*HPCStatus\=([A-Za-z0-9]+)')
+                mat = pat.match(job['jobmetrics'])
+                if mat:
+                    job['jobmode'] = mat.group(1)
+                    job['substate'] = mat.group(2)
+                pat = re.compile('.*coreCount\=([0-9]+)')
+                mat = pat.match(job['jobmetrics'])
+                if mat:
+                    job['corecount'] = mat.group(1)
+
+        if 'destinationdblock' in job:
+            ddbfields = job['destinationdblock'].split('.')
+            if len(ddbfields) == 6:
+                job['outputfiletype'] = ddbfields[4]
+            elif len(ddbfields) >= 7:
+                job['outputfiletype'] = ddbfields[6]
+            else:
+                job['outputfiletype'] = '?'
+            #print job['destinationdblock'], job['outputfiletype']
+
+        try:
+            job['homecloud'] = homeCloud[job['computingsite']]
+        except:
+            job['homecloud'] = None
+        if 'produsername' in job and not job['produsername']:
+            if ('produserid' in job) and job['produserid']:
+                job['produsername'] = job['produserid']
+            else:
+                job['produsername'] = 'Unknown'
+        if job['transformation']: job['transformation'] = job['transformation'].split('/')[-1]
+        if (job['jobstatus'] == 'failed' or job['jobstatus'] == 'cancelled') and 'brokerageerrorcode' in job:
+            job['errorinfo'] = errorInfo(job,nchars=70)
+        else:
+            job['errorinfo'] = ''
+        job['jobinfo'] = ''
+        if isEventService(job):
+            if 'taskbuffererrordiag' in job and len(job['taskbuffererrordiag']) > 0:
+                job['jobinfo'] = job['taskbuffererrordiag']
+            elif 'specialhandling' in job and job['specialhandling'] == 'esmerge':
+                job['jobinfo'] = 'Event service merge job'
+            else:
+                job['jobinfo'] = 'Event service job'
+        job['duration'] = ""
+        job['durationsec'] = 0
+        #if job['jobstatus'] in ['finished','failed','holding']:
+        if 'endtime' in job and 'starttime' in job and job['starttime']:
+            starttime = job['starttime']
+            if job['endtime']:
+                endtime = job['endtime']
+            else:
+                endtime = timezone.now()
+
+            duration = max(endtime - starttime, timedelta(seconds=0))
+            ndays = duration.days
+            strduration = str(timedelta(seconds=duration.seconds))
+            job['duration'] = "%s:%s" % ( ndays, strduration )
+            job['durationsec'] = ndays*24*3600+duration.seconds
+
+
+
+        job['waittime'] = ""
+        #if job['jobstatus'] in ['running','finished','failed','holding','cancelled','transferring']:
+        if 'creationtime' in job and 'starttime' in job and job['creationtime']:
+            creationtime = job['creationtime']
+            if job['starttime']:
+                starttime = job['starttime']
+            else:
+                starttime = timezone.now()
+            wait = starttime - creationtime
+            ndays = wait.days
+            strwait = str(timedelta(seconds=wait.seconds))
+            job['waittime'] = "%s:%s" % (ndays, strwait)
+        if 'currentpriority' in job:
+            plo = int(job['currentpriority'])-int(job['currentpriority'])%100
+            phi = plo+99
+            job['priorityrange'] = "%d:%d" % ( plo, phi )
+        if 'jobsetid' in job and job['jobsetid']:
+            plo = int(job['jobsetid'])-int(job['jobsetid'])%100
+            phi = plo+99
+            job['jobsetrange'] = "%d:%d" % ( plo, phi )
+
+    ## drop duplicate jobs
+    droplist = []
+    job1 = {}
+    newjobs = []
+    for job in jobs:
+        pandaid = job['pandaid']
+        dropJob = 0
+        if pandaid in job1:
+            ## This is a duplicate. Drop it.
+            dropJob = 1
+        else:
+            job1[pandaid] = 1
+        if (dropJob == 0):
+            newjobs.append(job)
+    jobs = newjobs
+
+    if mode == 'nodrop':
+        print 'job list cleaned'
+        return jobs
