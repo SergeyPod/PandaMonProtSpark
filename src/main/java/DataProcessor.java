@@ -1,37 +1,53 @@
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.mllib.linalg.distributed.IndexedRow;
 import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.util.SystemClock;
 
+import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by podolsky on 13.02.16.
  */
 public class DataProcessor {
 
-    private SparkConf conf;
     private DataProvider dataProvider;
+    private JavaSparkContext sparkContext;
+    private ArrayList<Map<String,String>> errorCodeListOfMaps;
 
-    DataProcessor(DataProvider dataProvider, SparkConf conf) {
-        this.conf = conf;
+    DataProcessor(DataProvider dataProvider, JavaSparkContext sparkContext) {
         this.dataProvider = dataProvider;
+        this.sparkContext = sparkContext;
+
     }
 
     String errorSummary(ErrorSummaryJSONRequest query){
 
         //String[] tableQueryParameters = {"computingsite", "jobstatus", "produsername", "specialhandling","produsername", "jeditaskid", "taskid"};
 
-        JavaSparkContext sparkContext = new JavaSparkContext(conf);
+        //JavaSparkContext sparkContext = new JavaSparkContext(conf);
         sparkContext.setLogLevel("ERROR");
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
         final SQLContext sqlContext = new SQLContext(sparkContext);
 
         String [] dataFolders = dataProvider.getDataFolders().get("ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4");
 
-        if (dataFolders == null || dataFolders.length > 0)
+        if (dataFolders == null || dataFolders.length == 0)
             return "Error with Data Source";
 
         DataFrame sourceDataFrame = sqlContext.read().parquet(dataFolders[0]);
@@ -39,16 +55,38 @@ public class DataProcessor {
             sourceDataFrame = sourceDataFrame.unionAll(sqlContext.read().parquet(dataFolders[0]));
 
 
-        Accumulator<ErrorsSummaryProcessorAccumulator> errorsSummaryAccByCount = sparkContext.accumulator(ErrorsSummaryProcessorAccumulator.ZERO, "errsByCount", ErrorsSummaryProcessorAccumulator.PARAM_INSTANCE);
-        Accumulator<ErrorsSummaryProcessorAccumulator> errorsSummaryAccBySite = sparkContext.accumulator(ErrorsSummaryProcessorAccumulator.ZERO, "errsBySite", ErrorsSummaryProcessorAccumulator.PARAM_INSTANCE);
-        Accumulator<ErrorsSummaryProcessorAccumulator> errorsSummaryAccByTask = sparkContext.accumulator(ErrorsSummaryProcessorAccumulator.ZERO, "errsByTask", ErrorsSummaryProcessorAccumulator.PARAM_INSTANCE);
-        Accumulator<ErrorsSummaryProcessorAccumulator> errorsSummaryAccByUser = sparkContext.accumulator(ErrorsSummaryProcessorAccumulator.ZERO, "errsByUser", ErrorsSummaryProcessorAccumulator.PARAM_INSTANCE);
-        sourceDataFrame.toJavaRDD().map(new ErrorsSummaryProcessorMap(errorsSummaryAccByCount,errorsSummaryAccBySite,errorsSummaryAccByTask, errorsSummaryAccByUser)).count();
-        //int indexes[] = proximityArray.value().getIndexes();
+        final Accumulator<Map<String, ErrorSummaryerrsByCount>> errorsSummaryAccByCount = sparkContext.accumulator( new HashMap<String,
+                ErrorSummaryerrsByCount>(), "errsByCount", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByCount>());
+        final Accumulator<Map<String, ErrorSummaryerrsBySite>> errorsSummaryAccBySite = sparkContext.accumulator(new HashMap<String,
+                ErrorSummaryerrsBySite>(), "errsBySite", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsBySite>());
+        final Accumulator<Map<String, ErrorSummaryerrsByTask>> errorsSummaryAccByTask = sparkContext.accumulator(new HashMap<String,
+                ErrorSummaryerrsByTask>(), "errsByTask", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByTask>());
+        final Accumulator<Map<String, ErrorSummaryerrsByUser>> errorsSummaryAccByUser = sparkContext.accumulator(new HashMap<String,
+                ErrorSummaryerrsByUser>(), "errsByUser", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByUser>());
+
+        final Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "errorsSummaryAccBySiteJobs", new MapIntegerAccumulator());
+        final Accumulator<Map<String, Integer>> errorSummaryerrsByTaskJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "ErrorSummaryerrsByTaskJobs", new MapIntegerAccumulator());
+
+        ErrorsSummaryProcessorMap map = new ErrorsSummaryProcessorMap();
+        map.setErrorsSummaryAccByCount(errorsSummaryAccByCount);
+        map.setErrorsSummaryAccBySite(errorsSummaryAccBySite);
+        map.setErrorsSummaryAccByTask(errorsSummaryAccByTask);
+        map.setErrorsSummaryAccByUser(errorsSummaryAccByUser);
+        map.setErrorsSummaryAccBySiteJobs(errorsSummaryAccBySiteJobs);
+        map.seterrorSummaryerrsByTaskJobs(errorSummaryerrsByTaskJobs);
+
+        sourceDataFrame.toJavaRDD().foreach(map);
+
+        Map<String, Integer> example = errorSummaryerrsByTaskJobs.value();
+
+        for (String name: example.keySet()){
+
+            String key =name.toString();
+            String value = example.get(name).toString();
+            System.out.println(key + " " + value);
 
 
-
-
+        }
 
         return null;
     }

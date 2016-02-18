@@ -3,6 +3,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
@@ -44,10 +45,13 @@ public class DataProvider {
 
     //String debugLimitation = "";
     String debugLimitation = " AND ROWNUM < 1000";
-    SparkConf conf;
+    //SparkConf conf;
+    JavaSparkContext sparkContext;
     Properties connectionProperties;
 
-    DataProvider(SparkConf conf){
+    DataProvider(JavaSparkContext sparkContext){
+
+        this.sparkContext = sparkContext;
 
         PropertiesConfiguration config = new PropertiesConfiguration();
         try {
@@ -67,7 +71,7 @@ public class DataProvider {
         connectionProperties.setProperty("driver", config.getString("ORACLE_DRIVER"));
         connectionProperties.setProperty("user", config.getString("ORACLE_USERNAME"));
         connectionProperties.setProperty("password", config.getString("ORACLE_PWD"));
-        this.conf = conf;
+        //this.conf = conf;
     }
 
 
@@ -94,8 +98,7 @@ public class DataProvider {
     public void updateTables() {
 
         final BigDecimal previousUpdateTime = new BigDecimal(0);
-        System.out.println("Update Started:" + new Date());
-        JavaSparkContext sparkContext = new JavaSparkContext(conf);
+        //JavaSparkContext sparkContext = new JavaSparkContext(conf);
         sparkContext.setLogLevel("ERROR");
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
 
@@ -166,6 +169,7 @@ public class DataProvider {
                     ;
                 }
             }
+            isDataReady.set(true);
             System.out.println("Update Finished:" + new Date());
         }
     }

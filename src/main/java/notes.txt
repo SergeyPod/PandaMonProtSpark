@@ -165,3 +165,67 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
     if mode == 'nodrop':
         print 'job list cleaned'
         return jobs
+
+
+
+
+
+
+
+
+
+/*
+        if (map1 instanceof ErrorSummaryerrsByCount) {
+            String errorCode =  ((ErrorSummaryerrsByCount) map1).error;
+            if (map2.containsKey(errorCode))
+                ((ErrorSummaryerrsByCount)map2.get(errorCode)).count.incrementAndGet();
+            else
+                map2.put(errorCode, r);
+        }
+
+        if (r instanceof ErrorSummaryerrsByUser) {
+            String user =  ((ErrorSummaryerrsByUser) r).name;
+            if (map2.containsKey(user)) {
+                ErrorSummaryerrsByUser errorSummaryerrsByUser = ((ErrorSummaryerrsByUser) map2.get(user));
+                errorSummaryerrsByUser.toterrors.incrementAndGet();
+                String errorKey = (String) errorSummaryerrsByUser.errors.keySet().toArray()[0];
+                if (errorSummaryerrsByUser.errors.containsKey(errorKey))
+                    errorSummaryerrsByUser.errors.get(errorKey).count.incrementAndGet();
+                else
+                    errorSummaryerrsByUser.errors.put(errorKey, errorSummaryerrsByUser.errors.get(errorKey));
+            }
+            else
+                map2.put(user, r);
+        }
+
+        if (r instanceof ErrorSummaryerrsBySite) {
+            String user =  ((ErrorSummaryerrsBySite) r).name;
+            if (map2.containsKey(user)) {
+                ErrorSummaryerrsBySite errorSummaryerrsBySite = ((ErrorSummaryerrsBySite) map2.get(user));
+                errorSummaryerrsBySite.toterrors.incrementAndGet();
+                String errorKey = (String) errorSummaryerrsBySite.errors.keySet().toArray()[0];
+                if (errorSummaryerrsBySite.errors.containsKey(errorKey))
+                    errorSummaryerrsBySite.errors.get(errorKey).count.incrementAndGet();
+                else
+                    errorSummaryerrsBySite.errors.put(errorKey, errorSummaryerrsBySite.errors.get(errorKey));
+            }
+            else
+                map2.put(user, r);
+        }
+
+        if (r instanceof ErrorSummaryerrsByTask) {
+            String taskid =  ((ErrorSummaryerrsByTask) r).name;
+            if (map2.containsKey(taskid)) {
+                ErrorSummaryerrsByTask errorSummaryerrsByTask = ((ErrorSummaryerrsByTask) map2.get(taskid));
+                errorSummaryerrsByTask.toterrors.incrementAndGet();
+                String errorKey = (String) errorSummaryerrsByTask.errors.keySet().toArray()[0];
+                if (errorSummaryerrsByTask.errors.containsKey(errorKey))
+                    errorSummaryerrsByTask.errors.get(errorKey).count.incrementAndGet();
+                else
+                    errorSummaryerrsByTask.errors.put(errorKey, errorSummaryerrsByTask.errors.get(errorKey));
+            }
+            else
+                map2.put(taskid, r);
+        }
+        return map2;
+*/

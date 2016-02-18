@@ -17,7 +17,6 @@ class ErrorSummaryJSONRequest {
 }
 
 
-
 class ErrorSummaryerrsByCount {
     public String error;
     public String codename;
@@ -26,23 +25,38 @@ class ErrorSummaryerrsByCount {
     public AtomicInteger count;
 }
 
-class ErrorSummaryerrsByUser {
+class ErrorSummaryerrsByUser extends ErrorSummaryerrs{
     public String name;
-    public Map<String,ErrorSummaryerrsByCount> errors;
     public AtomicInteger toterrors;
 }
 
 class ErrorSummaryerrsBySite extends ErrorSummaryerrsByUser{
+    public AtomicInteger toterrjobs;
 }
 
-class ErrorSummaryerrsByTask {
+class ErrorSummaryerrsByTask extends ErrorSummaryerrs{
     public String name;
     public String longname;
-    public Map<String,ErrorSummaryerrsByCount> errors;
     public AtomicInteger toterrors;
+    public AtomicInteger toterrjobs;
     public String tasktype;
     public String errcode;
 }
+
+class ErrorSummaryerrs {
+    public Map<String,ErrorSummaryerrsByCount> errors;
+    public void mergeErrors( Map<String,ErrorSummaryerrsByCount> otherErrors) {
+
+        otherErrors.forEach((k, v) -> errors.merge(k, v, (obj1, obj2) ->
+        {
+            obj1.count.addAndGet( obj2.count.get());
+            return obj1;
+        }));
+    }
+}
+
+
+
 
 
 

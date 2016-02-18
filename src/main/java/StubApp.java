@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
 
 /**
  * Created by podolsky on 12.02.16.
@@ -15,21 +16,25 @@ public class StubApp {
         PmTable cloudConfig = new PmTable("ATLAS_PANDAMETA.CLOUDCONFIG", true, "/fasttmp/spark/CLOUDCONFIG", "", false);
         PmTable schedConfig = new PmTable("ATLAS_PANDAMETA.SCHEDCONFIG", true, "/fasttmp/spark/SCHEDCONFIG", "", false);
 
-        SparkConf conf = new SparkConf().setAppName("serverApp").setMaster("local[1]").set("spark.local.dir","/fasttmp/spark").
+        SparkConf conf = new SparkConf().setAppName("serverApp").setMaster("local[2]").set("spark.local.dir","/fasttmp/spark").
                 set("spark.driver.allowMultipleContexts","true").set("spark.ui.enabled", "false").
                 set("spark.streaming.unpersist","true");//set("spark.cleaner.ttl", "5200");
+        JavaSparkContext sparkContext = new JavaSparkContext(conf);
 
 
-        DataProvider dataProvider = new DataProvider(conf);
+        DataProvider dataProvider = new DataProvider(sparkContext);
         dataProvider.registerTable(jobsTable);
         dataProvider.registerTable(cloudConfig);
         dataProvider.registerTable(schedConfig);
         dataProvider.updateTablesAsynchro();
 
-        DataProcessor dataProcessor = new DataProcessor(dataProvider, conf);
+        DataProcessor dataProcessor = new DataProcessor(dataProvider, sparkContext);
 
         ErrorSummaryJSONRequest es = new ErrorSummaryJSONRequest();
         es.JOBType = "";
+
+        while (dataProvider.getDataFolders() == null)
+            Thread.sleep(1000*10);
         dataProcessor.errorSummary(es);
 
         /*
