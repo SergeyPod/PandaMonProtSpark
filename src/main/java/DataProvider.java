@@ -43,8 +43,8 @@ public class DataProvider {
 
     private ArrayList<String> generations = new ArrayList<String>();
 
-    //String debugLimitation = "";
-    String debugLimitation = " AND ROWNUM < 1000";
+    String debugLimitation = "";
+    //String debugLimitation = " AND ROWNUM < 1000";
     //SparkConf conf;
     JavaSparkContext sparkContext;
     Properties connectionProperties;
@@ -145,9 +145,9 @@ public class DataProvider {
                             if (previousCacheSuffix != null && table.isIncrement) {
                                 DataFrame oldDF = sqlContext.read().parquet(table.cachePath + "." + previousCacheSuffix);
                                 oldDF.registerTempTable("oldDF");
-                                table.dataFrame = newDF.unionAll(sqlContext.sql("SELECT oldDF.* FROM oldDF LEFT OUTER JOIN newDF ON oldDF.PANDAID=newDF.PANDAID WHERE newDF.PANDAID IS NULL"));
+                                table.dataFrame = newDF1.unionAll(sqlContext.sql("SELECT oldDF.* FROM oldDF LEFT OUTER JOIN newDF ON oldDF.PANDAID=newDF.PANDAID WHERE newDF.PANDAID IS NULL"));
                             } else {
-                                table.dataFrame = newDF;
+                                table.dataFrame = newDF1;
                             }
                             table.dataFrame.saveAsParquetFile(table.cachePath + "." + currentCacheSuffix);
                             System.gc();

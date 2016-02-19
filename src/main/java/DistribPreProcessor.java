@@ -1,6 +1,8 @@
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.types.Decimal;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,37 +85,40 @@ public class DistribPreProcessor implements Function<Row, Row> {
         String err1 = "";
 
 
-        if ((Integer) row.getAs("BROKERAGEERRORCODE") != 0) {
+        if (  ((BigDecimal) row.getAs("BROKERAGEERRORCODE")).longValue() != 0) {
             errtxt += "Brokerage error " + row.getAs("BROKERAGEERRORCODE") + ": " + row.getAs("BROKERAGEERRORDIAG") + " <br>";
             if (err1.equals("")) err1 = "Broker: " + row.getAs("BROKERAGEERRORDIAG") + "";
         }
-        if ((Integer) row.getAs("DDMERRORCODE") != 0) {
-            errtxt += "'DDM error " + row.getAs("DDMERRORCODE") + ": " + row.getAs("DDMERRORDIAG") + " <br>";
-            if (err1.equals("")) err1 = "DDM: " + row.getAs("DDMERRORDIAG");
+        if ( ((BigDecimal) row.getAs("DDMERRORCODE")).longValue() != 0) {
+            errtxt += "'DDM error " + row.getAs("DDMERRORCODE") + ": " + ( (  ErrorsSummaryProcessorMap.checkIsField(row, "DDMERRORDIAG") )? row.getAs("DDMERRORDIAG") : "") + " <br>";
+            if (err1.equals("")) err1 = "DDM: " + ( (  ErrorsSummaryProcessorMap.checkIsField(row, "DDMERRORDIAG") )? row.getAs("DDMERRORDIAG") : "");
         }
-        if ((Integer) row.getAs("EXEERRORCODE") != 0) {
+        if ( ((BigDecimal) row.getAs("EXEERRORCODE")).longValue() != 0) {
             errtxt += "'Executable error " + row.getAs("EXEERRORCODE") + ": " + row.getAs("EXEERRORDIAG") + " <br>";
             if (err1.equals("")) err1 = "Exe: " + row.getAs("EXEERRORDIAG");
         }
-        if ((Integer) row.getAs("JOBDISPATCHERERRORCODE") != 0) {
-            errtxt += "'Dispatcher error " + row.getAs("jobdispatchererrorcode") + ": " + row.getAs("jobdispatchererrordiag") + " <br>";
-            if (err1.equals("")) err1 = "Dispatcher: " + row.getAs("jobdispatchererrordiag");
+
+
+        if ( ((BigDecimal) row.getAs("JOBDISPATCHERERRORCODE")).longValue() != 0) {
+            errtxt += "'Dispatcher error " + row.getAs("JOBDISPATCHERERRORCODE") + ": " + row.getAs("JOBDISPATCHERERRORDIAG") + " <br>";
+            if (err1.equals("")) err1 = "Dispatcher: " + row.getAs("JOBDISPATCHERERRORDIAG");
         }
-        if ((Integer) row.getAs("PILOTERRORCODE") != 0) {
+
+        if ( ((BigDecimal) row.getAs("PILOTERRORCODE")).longValue() != 0) {
             errtxt += "'Pilot error " + row.getAs("PILOTERRORCODE") + ": " + row.getAs("PILOTERRORDIAG") + " <br>";
             if (err1.equals("")) err1 = "Pilot: " + row.getAs("PILOTERRORDIAG");
         }
-        if ((Integer) row.getAs("SUPERRORCODE") != 0) {
+        if ( ((BigDecimal) row.getAs("SUPERRORCODE")).longValue() != 0) {
             errtxt += "'Pilot error " + row.getAs("SUPERRORCODE") + ": " + row.getAs("SUPERRORDIAG") + " <br>";
             if (err1.equals("")) err1 = row.getAs("SUPERRORDIAG");
         }
-        if ((Integer) row.getAs("TASKBUFFERERRORCODE") != 0) {
+        if ( ((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() != 0) {
             errtxt += "'Task buffer error " + row.getAs("TASKBUFFERERRORCODE") + ": " + row.getAs("TASKBUFFERERRORDIAG") + " <br>";
             if (err1.equals("")) err1 = row.getAs("TASKBUFFERERRORDIAG");
         }
-        if ((Integer) row.getAs("TRANSEXITCODE") != 0) {
+        if ( row.getAs("TRANSEXITCODE") != null ) {
             errtxt += "'Trf exit code " + row.getAs("TRANSEXITCODE") + ": " + row.getAs("TRANSEXITCODE") + " <br>";
-            if (err1.equals("")) err1 = "Trf exit code " + row.getAs("transexitcode");
+            if (err1.equals("")) err1 = "Trf exit code " + row.getAs("TRANSEXITCODE");
         }
 
         String desc = getErrorDescription(row, "html");
@@ -148,47 +153,49 @@ public class DistribPreProcessor implements Function<Row, Row> {
 
         RowDataModifier rowDataModifier = new RowDataModifier(row);
         if (isEventService(row)) {
-            if ((Integer) row.getAs("TASKBUFFERERRORCODE") == 111) {
+            if (((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() == 111) {
                 rowDataModifier.addVal("TASKBUFFERERRORDIAG", "Rerun scheduled to pick up unprocessed events");
-                rowDataModifier.addVal("PILOTERRORCODE", 0);
+                rowDataModifier.addVal("PILOTERRORCODE", Decimal.apply(0));
                 rowDataModifier.addVal("PILOTERRORDIAG", "Job terminated by signal from PanDA server");
                 rowDataModifier.addVal("JOBSTATUS", "finished");
             }
-            if ((Integer) row.getAs("TASKBUFFERERRORCODE") == 112) {
+            if (((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() == 112) {
                 rowDataModifier.addVal("TASKBUFFERERRORDIAG", "All events processed, merge job created");
-                rowDataModifier.addVal("PILOTERRORCODE", 0);
+                rowDataModifier.addVal("PILOTERRORCODE", Decimal.apply(0));
                 rowDataModifier.addVal("PILOTERRORDIAG", "Job terminated by signal from PanDA server");
                 rowDataModifier.addVal("JOBSTATUS", "finished");
             }
-            if ((Integer) row.getAs("TASKBUFFERERRORCODE") == 114) {
+            if (((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() == 114) {
                 rowDataModifier.addVal("TASKBUFFERERRORDIAG", "No rerun to pick up unprocessed, at max attempts");
-                rowDataModifier.addVal("PILOTERRORCODE", 0);
+                rowDataModifier.addVal("PILOTERRORCODE", Decimal.apply(0));
                 rowDataModifier.addVal("PILOTERRORDIAG", "Job terminated by signal from PanDA server");
                 rowDataModifier.addVal("JOBSTATUS", "finished");
             }
-            if ((Integer) row.getAs("TASKBUFFERERRORCODE") == 115) {
+            if (((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() == 115) {
                 rowDataModifier.addVal("TASKBUFFERERRORDIAG", "No events remaining, other jobs still processing");
-                rowDataModifier.addVal("PILOTERRORCODE", 0);
+                rowDataModifier.addVal("PILOTERRORCODE", Decimal.apply(0));
                 rowDataModifier.addVal("PILOTERRORDIAG", "Job terminated by signal from PanDA server");
                 rowDataModifier.addVal("JOBSTATUS", "finished");
             }
-            if ((Integer) row.getAs("TASKBUFFERERRORCODE") == 116) {
+            if (((BigDecimal) row.getAs("TASKBUFFERERRORCODE")).longValue() == 116) {
                 rowDataModifier.addVal("TASKBUFFERERRORDIAG", "No remaining event ranges to allocate");
-                rowDataModifier.addVal("PILOTERRORCODE", 0);
+                rowDataModifier.addVal("PILOTERRORCODE", Decimal.apply(0));
                 rowDataModifier.addVal("PILOTERRORDIAG", "Job terminated by signal from PanDA server");
                 rowDataModifier.addVal("JOBSTATUS", "finished");
             }
 
-            Pattern pattern = Pattern.compile(".*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)");
-            Matcher matcher = pattern.matcher((String) row.getAs("JOBMETRICS"));
-            if (matcher.matches()) {
-                rowDataModifier.addVal("JOBMODE", matcher.group(1));
-                rowDataModifier.addVal("SUBSTATE", matcher.group(2));
-            }
-            pattern = Pattern.compile(".*coreCount\\=([0-9]+)");
-            matcher = pattern.matcher((String) row.getAs("JOBMETRICS"));
-            if (matcher.matches()) {
-                rowDataModifier.addVal("CORECOUNT", matcher.group(1));
+            if (row.getAs("JOBMETRICS") != null) {
+                Pattern pattern = Pattern.compile(".*mode\\=([^\\s]+).*HPCStatus\\=([A-Za-z0-9]+)");
+                Matcher matcher = pattern.matcher((String) row.getAs("JOBMETRICS"));
+                if (matcher.matches()) {
+                    rowDataModifier.addVal("JOBMODE", matcher.group(1));
+                    rowDataModifier.addVal("SUBSTATE", matcher.group(2));
+                }
+                pattern = Pattern.compile(".*coreCount\\=([0-9]+)");
+                matcher = pattern.matcher((String) row.getAs("JOBMETRICS"));
+                if (matcher.matches()) {
+                    rowDataModifier.addVal("CORECOUNT",  Decimal.apply(new Integer(matcher.group(1)).intValue() ));
+                }
             }
         }
 
@@ -228,7 +235,7 @@ public class DistribPreProcessor implements Function<Row, Row> {
 
         if (isEventService(row)) {
             String taskbuffererrordiag = row.getAs("TASKBUFFERERRORDIAG");
-            if (taskbuffererrordiag.length() > 0)
+            if ((taskbuffererrordiag != null) && (taskbuffererrordiag.length() > 0))
                 rowDataModifier.addVal("JOBINFO", "taskbuffererrordiag");
             else if (((String) row.getAs("SPECIALHANDLING")).length() > 0)
                 rowDataModifier.addVal("JOBINFO", "Event service merge job");

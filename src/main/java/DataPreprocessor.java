@@ -41,11 +41,19 @@ public class DataPreprocessor {
             JavaRDD<Row> modifiedRDD = oldDF.toJavaRDD().map(new DistribPreProcessor(homeClouds));
             StructType schema = oldDF.schema();
 
+            // !!!Correspondent in RowDataModifier
+
+
             schema = schema.add("ERRORINFO", DataTypes.StringType, true);
             schema = schema.add("HOMECLOUD", DataTypes.StringType, true);
             schema = schema.add("JOBINFO", DataTypes.StringType, true);
             schema = schema.add("OUTPUTFILETYPE", DataTypes.StringType, true);
-            retDF = oldDF.sqlContext().createDataFrame( modifiedRDD , schema);
+            schema = schema.add("JOBMODE", DataTypes.StringType, true);
+            schema = schema.add("SUBSTATE", DataTypes.StringType, true);
+
+
+
+            retDF = oldDF.sqlContext().applySchema(modifiedRDD , schema); //oldDF.sqlContext().createDataFrame( modifiedRDD , schema);
         }
         else
             retDF = oldDF;

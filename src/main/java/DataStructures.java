@@ -48,20 +48,24 @@ class ErrorSummaryerrsByTask extends ErrorSummaryerrs implements Serializable{
 }
 
 class ErrorSummaryerrs {
+
+    ErrorSummaryerrs() {
+        errors = new TreeMap<String,ErrorSummaryerrsByCount>();
+    }
+
     public Map<String,ErrorSummaryerrsByCount> errors;
     public void mergeErrors( Map<String,ErrorSummaryerrsByCount> otherErrors) {
 
-        if (errors != null)
-        try {
-            otherErrors.forEach((k, v) -> errors.merge(k, v, (obj1, obj2) ->
-            {
-                if (obj1 == null) return null;
-                obj1.count += obj2.count;
-                return obj1;
-            }));
+    try {
+         otherErrors.forEach((k, v) -> errors.merge(k, v, (obj1, obj2) ->
+         {
+             if (obj1 == null) return null;
+             obj1.count += obj2.count;
+             return obj1;
+         }));
         } catch (NullPointerException ex){
             System.out.println(ex);
-        }
+       }
     }
 }
 

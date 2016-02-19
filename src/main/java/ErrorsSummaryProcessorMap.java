@@ -68,7 +68,7 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
     }
 
 
-    public boolean checkIsField(Row row, String fieldName) {
+    public static boolean checkIsField(Row row, String fieldName) {
             return Arrays.asList(row.schema().fieldNames()).contains(fieldName.toUpperCase());
     }
 

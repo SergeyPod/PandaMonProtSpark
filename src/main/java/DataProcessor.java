@@ -16,10 +16,7 @@ import org.apache.spark.util.SystemClock;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -34,24 +31,27 @@ public class DataProcessor {
     DataProcessor(DataProvider dataProvider, JavaSparkContext sparkContext) {
         this.dataProvider = dataProvider;
         this.sparkContext = sparkContext;
-
     }
 
     String errorSummary(ErrorSummaryJSONRequest query){
 
-        System.out.println("Mapping Started");
 
         //String[] tableQueryParameters = {"computingsite", "jobstatus", "produsername", "specialhandling","produsername", "jeditaskid", "taskid"};
 
         //JavaSparkContext sparkContext = new JavaSparkContext(conf);
-        sparkContext.setLogLevel("ERROR");
+
+        //sparkContext.setLogLevel("ERROR");
+
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
+
         final SQLContext sqlContext = new SQLContext(sparkContext);
 
         String [] dataFolders = dataProvider.getDataFolders().get("ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4");
 
         if (dataFolders == null || dataFolders.length == 0)
             return "Error with Data Source";
+
+        System.out.println("Mapping Started: " + (new Date()));
 
         DataFrame sourceDataFrame = sqlContext.read().parquet(dataFolders[0]);
         for (int i = 1; i < dataFolders.length; i++)
@@ -87,7 +87,7 @@ public class DataProcessor {
             String value = example.get(name).toString();
             System.out.println(key + " " + value);
         }
-        System.out.println("Mapping finished");
+        System.out.println("Mapping finished:" + (new Date()));
 
         return null;
     }
