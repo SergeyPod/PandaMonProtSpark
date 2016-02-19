@@ -15,6 +15,7 @@ import org.apache.spark.util.SystemClock;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,6 +38,8 @@ public class DataProcessor {
     }
 
     String errorSummary(ErrorSummaryJSONRequest query){
+
+        System.out.println("Mapping Started");
 
         //String[] tableQueryParameters = {"computingsite", "jobstatus", "produsername", "specialhandling","produsername", "jeditaskid", "taskid"};
 
@@ -65,7 +68,7 @@ public class DataProcessor {
                 ErrorSummaryerrsByUser>(), "errsByUser", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByUser>());
 
         final Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "errorsSummaryAccBySiteJobs", new MapIntegerAccumulator());
-        final Accumulator<Map<String, Integer>> errorSummaryerrsByTaskJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "ErrorSummaryerrsByTaskJobs", new MapIntegerAccumulator());
+        final Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs = sparkContext.accumulator(new HashMap<BigDecimal, Integer>(), "ErrorSummaryerrsByTaskJobs", new MapIntegerAccumulator());
 
         ErrorsSummaryProcessorMap map = new ErrorsSummaryProcessorMap();
         map.setErrorsSummaryAccByCount(errorsSummaryAccByCount);
@@ -77,16 +80,14 @@ public class DataProcessor {
 
         sourceDataFrame.toJavaRDD().foreach(map);
 
-        Map<String, Integer> example = errorSummaryerrsByTaskJobs.value();
+        Map<BigDecimal, Integer> example = errorSummaryerrsByTaskJobs.value();
 
-        for (String name: example.keySet()){
-
+        for (BigDecimal name: example.keySet()){
             String key =name.toString();
             String value = example.get(name).toString();
             System.out.println(key + " " + value);
-
-
         }
+        System.out.println("Mapping finished");
 
         return null;
     }

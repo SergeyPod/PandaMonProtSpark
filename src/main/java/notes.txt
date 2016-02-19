@@ -229,3 +229,10 @@ def cleanJobList(request, jobl, mode='nodrop', doAddMeta = True):
         }
         return map2;
 */
+
+
+                try {
+                    checkIsField(row, err.get("diag"));
+                } catch (NullPointerException ex) {
+                    System.out.print( ex );
+                }

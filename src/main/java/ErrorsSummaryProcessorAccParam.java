@@ -3,6 +3,7 @@ import org.apache.spark.AccumulatorParam;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by spadolski on 2/18/16.
@@ -26,23 +27,23 @@ public class ErrorsSummaryProcessorAccParam<T> implements AccumulatorParam<Map<S
 
 
     private Map<String, T> mergeMap( Map<String, T> map1, Map<String, T> map2) {
-        Map<String, T> result = new HashMap<>(map1);
+        Map<String, T> result = new TreeMap<>(map1);
         map2.forEach((k, v) -> result.merge(k, v, (obj1, obj2) ->
         {
             if (obj1 instanceof ErrorSummaryerrsByCount) {
-                ((ErrorSummaryerrsByCount)obj1).count.addAndGet( ((ErrorSummaryerrsByCount)obj2).count.get());
+                ((ErrorSummaryerrsByCount)obj1).count +=  ((ErrorSummaryerrsByCount)obj2).count;
             }
             if (obj1 instanceof ErrorSummaryerrsByUser) {
                 ((ErrorSummaryerrsByUser)obj1).mergeErrors(((ErrorSummaryerrsByUser)obj2).errors);
-                ((ErrorSummaryerrsByUser)obj1).toterrors.addAndGet( ((ErrorSummaryerrsByUser)obj2).toterrors.get());
+                ((ErrorSummaryerrsByUser)obj1).toterrors +=  ((ErrorSummaryerrsByUser)obj2).toterrors;
             }
             if (obj1 instanceof ErrorSummaryerrsBySite) {
                 ((ErrorSummaryerrsBySite)obj1).mergeErrors(((ErrorSummaryerrsBySite)obj2).errors);
-                ((ErrorSummaryerrsBySite)obj1).toterrors.addAndGet( ((ErrorSummaryerrsBySite)obj2).toterrors.get());
+                ((ErrorSummaryerrsBySite)obj1).toterrors +=  ((ErrorSummaryerrsBySite)obj2).toterrors;
             }
             if (obj1 instanceof ErrorSummaryerrsByTask) {
                 ((ErrorSummaryerrsByTask)obj1).mergeErrors(((ErrorSummaryerrsByTask)obj2).errors);
-                ((ErrorSummaryerrsByTask)obj1).toterrors.addAndGet( ((ErrorSummaryerrsByTask)obj2).toterrors.get());
+                ((ErrorSummaryerrsByTask)obj1).toterrors += ((ErrorSummaryerrsByTask)obj2).toterrors;
             }
 
             return obj1;
@@ -53,26 +54,26 @@ public class ErrorsSummaryProcessorAccParam<T> implements AccumulatorParam<Map<S
 }
 
 
-class MapIntegerAccumulator implements AccumulatorParam<Map<String, Integer>>, Serializable {
+class MapIntegerAccumulator<T> implements AccumulatorParam<Map<T, Integer>>, Serializable {
 
     @Override
-    public Map<String, Integer> addAccumulator(Map<String, Integer> t1, Map<String, Integer> t2) {
+    public Map<T, Integer> addAccumulator(Map<T, Integer> t1, Map<T, Integer> t2) {
         return mergeMap(t1, t2);
     }
 
     @Override
-    public Map<String, Integer> addInPlace(Map<String, Integer> r1, Map<String, Integer> r2) {
+    public Map<T, Integer> addInPlace(Map<T, Integer> r1, Map<T, Integer> r2) {
         return mergeMap(r1, r2);
 
     }
 
     @Override
-    public Map<String, Integer> zero(final Map<String, Integer> initialValue) {
+    public Map<T, Integer> zero(final Map<T, Integer> initialValue) {
         return new HashMap<>();
     }
 
-    private Map<String, Integer> mergeMap( Map<String, Integer> map1, Map<String, Integer> map2) {
-        Map<String, Integer> result = new HashMap<>(map1);
+    private Map<T, Integer> mergeMap( Map<T, Integer> map1, Map<T,Integer> map2) {
+        Map<T, Integer> result = new TreeMap<>(map1);
         map2.forEach((k, v) -> result.merge(k, v, (a, b) -> a + b));
         return result;
     }

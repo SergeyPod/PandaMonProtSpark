@@ -1,3 +1,5 @@
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,28 +19,30 @@ class ErrorSummaryJSONRequest {
 }
 
 
-class ErrorSummaryerrsByCount {
+class ErrorSummaryerrsByCount implements Serializable{
     public String error;
     public String codename;
     public String codeval;
     public String diag;
-    public AtomicInteger count;
+    public Integer count;
 }
 
-class ErrorSummaryerrsByUser extends ErrorSummaryerrs{
+class ErrorSummaryerrsByUser extends ErrorSummaryerrs implements Serializable{
     public String name;
-    public AtomicInteger toterrors;
+    public Integer toterrors;
 }
 
-class ErrorSummaryerrsBySite extends ErrorSummaryerrsByUser{
-    public AtomicInteger toterrjobs;
-}
-
-class ErrorSummaryerrsByTask extends ErrorSummaryerrs{
+class ErrorSummaryerrsBySite extends ErrorSummaryerrs implements Serializable {
+    public Integer toterrjobs;
+    public Integer toterrors;
     public String name;
+}
+
+class ErrorSummaryerrsByTask extends ErrorSummaryerrs implements Serializable{
+    public BigDecimal name;
     public String longname;
-    public AtomicInteger toterrors;
-    public AtomicInteger toterrjobs;
+    public Integer toterrors;
+    public Integer toterrjobs;
     public String tasktype;
     public String errcode;
 }
@@ -47,11 +51,17 @@ class ErrorSummaryerrs {
     public Map<String,ErrorSummaryerrsByCount> errors;
     public void mergeErrors( Map<String,ErrorSummaryerrsByCount> otherErrors) {
 
-        otherErrors.forEach((k, v) -> errors.merge(k, v, (obj1, obj2) ->
-        {
-            obj1.count.addAndGet( obj2.count.get());
-            return obj1;
-        }));
+        if (errors != null)
+        try {
+            otherErrors.forEach((k, v) -> errors.merge(k, v, (obj1, obj2) ->
+            {
+                if (obj1 == null) return null;
+                obj1.count += obj2.count;
+                return obj1;
+            }));
+        } catch (NullPointerException ex){
+            System.out.println(ex);
+        }
     }
 }
 

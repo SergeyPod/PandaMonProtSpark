@@ -5,12 +5,14 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.mllib.linalg.distributed.IndexedRow;
 import org.apache.spark.sql.Row;
+import org.apache.spark.util.SystemClock;
 import scala.collection.JavaConversions;
 import scala.collection.TraversableOnce;
 import com.google.gson.reflect.TypeToken;
 import scala.math.Ordering;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,7 +29,7 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
     private Accumulator<Map<String, ErrorSummaryerrsByTask>> errorsSummaryAccByTask;
     private Accumulator<Map<String, ErrorSummaryerrsByUser>> errorsSummaryAccByUser;
     private Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs;
-    private Accumulator<Map<String, Integer>> errorSummaryerrsByTaskJobs;
+    private Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs;
 
     public void setErrorsSummaryAccByCount(Accumulator<Map<String, ErrorSummaryerrsByCount>> errorsSummaryAccByCount){
         this.errorsSummaryAccByCount = errorsSummaryAccByCount;
@@ -49,7 +51,7 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
         this.errorsSummaryAccBySiteJobs = errorsSummaryAccBySiteJobs;
     }
 
-    public void seterrorSummaryerrsByTaskJobs(Accumulator<Map<String, Integer>> errorSummaryerrsByTaskJobs){
+    public void seterrorSummaryerrsByTaskJobs(Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs){
         this.errorSummaryerrsByTaskJobs = errorSummaryerrsByTaskJobs;
     }
 
@@ -65,12 +67,18 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
 
     }
 
+
+    public boolean checkIsField(Row row, String fieldName) {
+            return Arrays.asList(row.schema().fieldNames()).contains(fieldName.toUpperCase());
+    }
+
     public void call(Row row) {
             Iterator errorCodesIterator = errorCodeListOfMaps.iterator();
             while (errorCodesIterator.hasNext()) {
                 Map<String, String> err = (Map<String, String>) errorCodesIterator.next();
 
-                if ( (err.get("diag") != null) && (row.schema().contains(err.get("diag").toUpperCase())))
+
+                if ((err != null) && checkIsField(row, err.get("diag")))
                 if ((row.getAs(err.get("error").toUpperCase()) != null) && (((String) row.getAs(err.get("error").toUpperCase()).toString()).length() > 0)) {
                     String errval = row.getAs(err.get("error").toUpperCase()).toString();
                     String errdiag = "";
@@ -99,50 +107,52 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
                     errsByCount.codename = err.get("error");
                     errsByCount.codeval = errnum;
                     errsByCount.diag = errdiag;
-                    errsByCount.count = new AtomicInteger(1);
+                    errsByCount.count = 1;
 
                     ErrorSummaryerrsByUser errsByUser = new ErrorSummaryerrsByUser();
-                    errsByUser.errors = new HashMap<String, ErrorSummaryerrsByCount>();
+                    errsByUser.errors = new TreeMap<String, ErrorSummaryerrsByCount>();
                     errsByUser.errors.put(errcode, errsByCount);
                     errsByUser.name = row.getAs("PRODUSERNAME");
-                    errsByUser.toterrors = new AtomicInteger(1);
+                    errsByUser.toterrors = 1;
 
                     ErrorSummaryerrsBySite errsBySite = new ErrorSummaryerrsBySite();
                     errsBySite.name = row.getAs("COMPUTINGSITE");
-                    errsBySite.errors = new HashMap<String, ErrorSummaryerrsByCount>();
+                    errsBySite.errors = new TreeMap<String, ErrorSummaryerrsByCount>();
                     errsBySite.errors.put(errcode, errsByCount);
-                    errsBySite.toterrors = new AtomicInteger(1);
+                    errsBySite.toterrors = 1;
+
 
                     ErrorSummaryerrsByTask errsByTask = new ErrorSummaryerrsByTask();
                     errsByTask.errcode = errcode;
                     errsByTask.longname = row.getAs("TASKNAME");
-                    errsByTask.name = row.getAs("JEDITASKID").toString();
+                    errsByTask.name = row.getAs("JEDITASKID");
                     errsByTask.tasktype = "jeditaskid";
-                    errsByTask.toterrors = new AtomicInteger(1);
+                    errsByTask.toterrors = 1;
+                    errsByTask.errors = new TreeMap<String, ErrorSummaryerrsByCount>();
 
-                    Map<String, ErrorSummaryerrsByCount> map1 = new HashMap<String, ErrorSummaryerrsByCount>();
+                    Map<String, ErrorSummaryerrsByCount> map1 = new TreeMap<String, ErrorSummaryerrsByCount>();
                     map1.put(errcode, errsByCount);
                     errorsSummaryAccByCount.add(map1);
 
-                    Map<String, ErrorSummaryerrsByUser> map2 = new HashMap<String, ErrorSummaryerrsByUser>();
+                    Map<String, ErrorSummaryerrsByUser> map2 = new TreeMap<String, ErrorSummaryerrsByUser>();
                     map2.put(errcode, errsByUser);
                     errorsSummaryAccByUser.add(map2);
 
-                    Map<String, ErrorSummaryerrsBySite> map3 = new HashMap<String, ErrorSummaryerrsBySite>();
+                    Map<String, ErrorSummaryerrsBySite> map3 = new TreeMap<String, ErrorSummaryerrsBySite>();
                     map3.put(errcode, errsBySite);
                     errorsSummaryAccBySite.add(map3);
 
-                    Map<String, ErrorSummaryerrsByTask> map4 = new HashMap<String, ErrorSummaryerrsByTask>();
+                    Map<String, ErrorSummaryerrsByTask> map4 = new TreeMap<String, ErrorSummaryerrsByTask>();
                     map4.put(errcode, errsByTask);
                     errorsSummaryAccByTask.add(map4);
                 }
             }
 
-            Map<String, Integer> map5 =  new HashMap<>();
+            Map<String, Integer> map5 =  new TreeMap<>();
             map5.put(row.getAs("COMPUTINGSITE"), 1);
             errorsSummaryAccBySiteJobs.add(map5);
-            Map<String, Integer> map6 =  new HashMap<>();
-            map6.put(row.getAs("JEDITASKID"), 1);
+            Map<BigDecimal, Integer> map6 =  new TreeMap<>();
+            map6.put(  (row.getAs("JEDITASKID") != null)?row.getAs("JEDITASKID"): (new BigDecimal(0)) , 1);
             errorSummaryerrsByTaskJobs.add(map6);
         }
     }
