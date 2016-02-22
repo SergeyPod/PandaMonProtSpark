@@ -37,7 +37,6 @@ public class RowDataModifier {
 
     Row compileRow(){
 
-
         Map<String, Integer> fieldsMap = new HashMap<String, Integer>();
         int counter = 0;
 

@@ -100,7 +100,7 @@ public class DataProvider {
         final BigDecimal previousUpdateTime = new BigDecimal(0);
         //JavaSparkContext sparkContext = new JavaSparkContext(conf);
 
-        sparkContext.setLogLevel("ERROR");
+        //sparkContext.setLogLevel("ERROR");
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
         sparkContext.setLocalProperty("spark.scheduler.pool","analysis");
 

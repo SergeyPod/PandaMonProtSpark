@@ -13,6 +13,7 @@ import scala.math.Ordering;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,12 +23,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
 
     int count = 0;
+    private String[] flist;
 
     ArrayList<Map<String,String>> errorCodeListOfMaps;
     private Accumulator<Map<String, ErrorSummaryerrsByCount>> errorsSummaryAccByCount;
     private Accumulator<Map<String, ErrorSummaryerrsBySite>> errorsSummaryAccBySite;
     private Accumulator<Map<String, ErrorSummaryerrsByTask>> errorsSummaryAccByTask;
     private Accumulator<Map<String, ErrorSummaryerrsByUser>> errorsSummaryAccByUser;
+    private Accumulator<Map<Date, ErrorSummaryerrsByTime>> errorsSummaryAccByTime;
+
+
+
     private Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs;
     private Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs;
 
@@ -55,6 +61,9 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
         this.errorSummaryerrsByTaskJobs = errorSummaryerrsByTaskJobs;
     }
 
+    public void seterrorSummaryerrsByTime(Accumulator<Map<Date, ErrorSummaryerrsByTime>> errorsSummaryAccByTime){
+        this.errorsSummaryAccByTime = errorsSummaryAccByTime;
+    }
 
 
 
@@ -63,6 +72,8 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
         Gson gson = new Gson();
         Type mapOfStringObjectType = new TypeToken< ArrayList<Map<String,String>> >() {}.getType();
         errorCodeListOfMaps = gson.fromJson(CONSTS.errorcodelist, mapOfStringObjectType);
+        flist = new String[] {"cloud", "computingsite", "produsername", "taskid", "jeditaskid", "processingtype",
+                "prodsourcelabel", "transformation", "workinggroup", "specialhandling", "jobstatus"};
 
 
     }
@@ -74,6 +85,45 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
 
     public void call(Row row) {
             Iterator errorCodesIterator = errorCodeListOfMaps.iterator();
+
+            if (row.getAs("MODIFICATIONTIME") != null) {
+                ErrorSummaryerrsByTime errsByTime = new ErrorSummaryerrsByTime();
+                errsByTime.count = 1;
+                Timestamp tm = row.getAs("MODIFICATIONTIME");
+                long roundedtimeMs = Math.round( (double)( (double)tm.getTime()/(double)(15*60*1000) ) ) * (15*60*1000);
+                tm.setTime(roundedtimeMs);
+                errsByTime.tm = tm;
+
+                Map<Date, ErrorSummaryerrsByTime> map1 = new TreeMap<Date, ErrorSummaryerrsByTime>();
+                map1.put(tm, errsByTime);
+                errorsSummaryAccByTime.add(map1);
+            }
+
+            for (String f: flist) {
+
+            }
+
+/*
+                for f in flist:
+            if job[f]:
+                if f == 'taskid' and job[f] < 1000000 and 'produsername' not in request.session['requestParams']:
+                    pass
+                else:
+                    if not f in sumd: sumd[f] = {}
+                    if not job[f] in sumd[f]: sumd[f][job[f]] = 0
+                    sumd[f][job[f]] += 1
+
+
+
+        if job['specialhandling']:
+            if not 'specialhandling' in sumd: sumd['specialhandling'] = {}
+            shl = job['specialhandling'].split()
+            for v in shl:
+                if not v in sumd['specialhandling']: sumd['specialhandling'][v] = 0
+                sumd['specialhandling'][v] += 1
+
+         */
+
             while (errorCodesIterator.hasNext()) {
                 Map<String, String> err = (Map<String, String>) errorCodesIterator.next();
 

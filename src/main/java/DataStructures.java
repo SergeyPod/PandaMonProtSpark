@@ -1,10 +1,10 @@
+import org.apache.commons.net.ntp.TimeStamp;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by podolsky on 13.02.16.
@@ -26,6 +26,14 @@ class ErrorSummaryerrsByCount implements Serializable{
     public String diag;
     public Integer count;
 }
+
+class ErrorSummaryerrsByTime implements Serializable{
+    public Date tm;
+    public Integer count;
+}
+
+
+
 
 class ErrorSummaryerrsByUser extends ErrorSummaryerrs implements Serializable{
     public String name;

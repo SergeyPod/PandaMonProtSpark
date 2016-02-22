@@ -27,6 +27,7 @@ public class DataProcessor {
     private DataProvider dataProvider;
     private JavaSparkContext sparkContext;
     private ArrayList<Map<String,String>> errorCodeListOfMaps;
+    private final String debFolder = "QIOzmqXQFt";
 
     DataProcessor(DataProvider dataProvider, JavaSparkContext sparkContext) {
         this.dataProvider = dataProvider;
@@ -48,7 +49,8 @@ public class DataProcessor {
 
         final SQLContext sqlContext = new SQLContext(sparkContext);
 
-        String [] dataFolders = dataProvider.getDataFolders().get("ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4");
+        //String [] dataFolders = dataProvider.getDataFolders().get("ATLAS_PANDABIGMON.COMBINED_WAIT_ACT_DEF_ARCH4");
+        String [] dataFolders = new String[]{"/fasttmp/spark/COMBINED_WAIT_ACT_DEF_ARCH4."+debFolder};
 
         if (dataFolders == null || dataFolders.length == 0)
             return "Error with Data Source";
@@ -60,6 +62,8 @@ public class DataProcessor {
             sourceDataFrame = sourceDataFrame.unionAll(sqlContext.read().parquet(dataFolders[0]));
 
 
+        final Accumulator<Map<Date, ErrorSummaryerrsByTime>> errorsSummaryAccByTime = sparkContext.accumulator( new HashMap<Date,
+                ErrorSummaryerrsByTime>(), "errsByTime", new ErrorsSummaryProcessorAccParamDate<ErrorSummaryerrsByTime>());
         final Accumulator<Map<String, ErrorSummaryerrsByCount>> errorsSummaryAccByCount = sparkContext.accumulator( new HashMap<String,
                 ErrorSummaryerrsByCount>(), "errsByCount", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByCount>());
         final Accumulator<Map<String, ErrorSummaryerrsBySite>> errorsSummaryAccBySite = sparkContext.accumulator(new HashMap<String,
@@ -69,10 +73,13 @@ public class DataProcessor {
         final Accumulator<Map<String, ErrorSummaryerrsByUser>> errorsSummaryAccByUser = sparkContext.accumulator(new HashMap<String,
                 ErrorSummaryerrsByUser>(), "errsByUser", new ErrorsSummaryProcessorAccParam<ErrorSummaryerrsByUser>());
 
+
+
         final Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "errorsSummaryAccBySiteJobs", new MapIntegerAccumulator());
         final Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs = sparkContext.accumulator(new HashMap<BigDecimal, Integer>(), "ErrorSummaryerrsByTaskJobs", new MapIntegerAccumulator());
 
         ErrorsSummaryProcessorMap map = new ErrorsSummaryProcessorMap();
+        map.seterrorSummaryerrsByTime(errorsSummaryAccByTime);
         map.setErrorsSummaryAccByCount(errorsSummaryAccByCount);
         map.setErrorsSummaryAccBySite(errorsSummaryAccBySite);
         map.setErrorsSummaryAccByTask(errorsSummaryAccByTask);
@@ -80,16 +87,45 @@ public class DataProcessor {
         map.setErrorsSummaryAccBySiteJobs(errorsSummaryAccBySiteJobs);
         map.seterrorSummaryerrsByTaskJobs(errorSummaryerrsByTaskJobs);
 
-        sourceDataFrame.toJavaRDD().foreach(map);
+        sourceDataFrame.filter( " MODIFICATIONTIME > (now() - INTERVAL 6 HOUR) " ) .toJavaRDD().foreach(map);
 
+        /*
+
+        condition = \
+  (to_date(df.start_time) == to_date(df.end_time)) & \
+  (df.start_time + expr("INTERVAL 1 HOUR") >= df.end_time)
+
+
+         */
+
+
+/*
         Map<BigDecimal, Integer> example = errorSummaryerrsByTaskJobs.value();
-
         for (BigDecimal name: example.keySet()){
             String key =name.toString();
             String value = example.get(name).toString();
             System.out.println(key + " " + value);
         }
         System.out.println("Mapping finished:" + (new Date()));
+*/
+        Map<BigDecimal, Integer> example = errorSummaryerrsByTaskJobs.value();
+        for (BigDecimal name: example.keySet()){
+            String key =name.toString();
+            String value = example.get(name).toString();
+            System.out.println(key + " " + value);
+        }
+        System.out.println("Mapping finished:" + (new Date()));
+
+
+        Map<Date, ErrorSummaryerrsByTime> example1= errorsSummaryAccByTime.value();
+        for (Date name: example1.keySet()){
+            String key =name.toString();
+            long value = ((ErrorSummaryerrsByTime) example1.get(name)).count;
+            System.out.println(key + " " + value);
+        }
+        System.out.println("Mapping finished:" + (new Date()));
+
+
 
         return null;
     }

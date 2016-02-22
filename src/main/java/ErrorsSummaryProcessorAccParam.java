@@ -1,6 +1,7 @@
 import org.apache.spark.AccumulatorParam;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -14,18 +15,13 @@ import java.util.TreeMap;
 public class ErrorsSummaryProcessorAccParam<T> implements AccumulatorParam<Map<String, T>>, Serializable {
     // only use PARAM_INSTANCE
     public ErrorsSummaryProcessorAccParam() {}
-
     public Map<String, T> addAccumulator(final Map<String, T> r, final Map<String, T> t) { return mergeMap(r,t); }
-
     public Map<String, T> addInPlace(final Map<String, T> r, final Map<String, T> t) {
         return mergeMap(r,t);
     }
-
     public Map<String, T> zero(final Map<String, T> initialValue) {
         return new HashMap<>();
     }
-
-
     private Map<String, T> mergeMap( Map<String, T> map1, Map<String, T> map2) {
         Map<String, T> result = new TreeMap<>(map1);
         map2.forEach((k, v) -> result.merge(k, v, (obj1, obj2) ->
@@ -52,6 +48,16 @@ public class ErrorsSummaryProcessorAccParam<T> implements AccumulatorParam<Map<S
         return result;
     }
 }
+
+
+
+
+/*
+
+
+ */
+
+
 
 
 class MapIntegerAccumulator<T> implements AccumulatorParam<Map<T, Integer>>, Serializable {

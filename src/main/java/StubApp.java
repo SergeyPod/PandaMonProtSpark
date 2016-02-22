@@ -27,15 +27,15 @@ public class StubApp {
         dataProvider.registerTable(jobsTable);
         dataProvider.registerTable(cloudConfig);
         dataProvider.registerTable(schedConfig);
-        dataProvider.updateTablesAsynchro();
+        //dataProvider.updateTablesAsynchro();
 
         DataProcessor dataProcessor = new DataProcessor(dataProvider, sparkContext);
 
         ErrorSummaryJSONRequest es = new ErrorSummaryJSONRequest();
         es.JOBType = "";
 
-        while (dataProvider.getDataFolders() == null)
-            Thread.sleep(1000*10);
+        //while (dataProvider.getDataFolders() == null)
+        //    Thread.sleep(1000*10);
         dataProcessor.errorSummary(es);
 
         /*
