@@ -24,6 +24,7 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
 
     int count = 0;
     private String[] flist;
+    private String produserName;
 
     ArrayList<Map<String,String>> errorCodeListOfMaps;
     private Accumulator<Map<String, ErrorSummaryerrsByCount>> errorsSummaryAccByCount;
@@ -67,14 +68,14 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
 
 
 
-    ErrorsSummaryProcessorMap (Accumulator<Map<String, ? extends Object>>... accumulators){
+    ErrorsSummaryProcessorMap (ErrorSummaryJSONRequest query){
 
         Gson gson = new Gson();
         Type mapOfStringObjectType = new TypeToken< ArrayList<Map<String,String>> >() {}.getType();
         errorCodeListOfMaps = gson.fromJson(CONSTS.errorcodelist, mapOfStringObjectType);
         flist = new String[] {"cloud", "computingsite", "produsername", "taskid", "jeditaskid", "processingtype",
                 "prodsourcelabel", "transformation", "workinggroup", "specialhandling", "jobstatus"};
-
+        produserName = query.produsername;
 
     }
 
@@ -100,6 +101,16 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
             }
 
             for (String f: flist) {
+                if (produserName == null)
+                    break;
+/*
+                if not f in sumd: sumd[f] = {}
+                if not job[f] in sumd[f]: sumd[f][job[f]] = 0
+                sumd[f][job[f]] += 1
+
+                
+
+*/
 
             }
 

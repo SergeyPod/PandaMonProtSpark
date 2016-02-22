@@ -15,6 +15,7 @@ class ErrorSummaryJSONRequest {
     public int hours;
     public String JOBTableKeysFilter[];
     public String JOBTableValuesFilter[];
+    public String produsername;
 
 }
 
