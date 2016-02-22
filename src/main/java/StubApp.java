@@ -16,9 +16,10 @@ public class StubApp {
         PmTable cloudConfig = new PmTable("ATLAS_PANDAMETA.CLOUDCONFIG", true, "/fasttmp/spark/CLOUDCONFIG", "", false);
         PmTable schedConfig = new PmTable("ATLAS_PANDAMETA.SCHEDCONFIG", true, "/fasttmp/spark/SCHEDCONFIG", "", false);
 
-        SparkConf conf = new SparkConf().setAppName("serverApp").setMaster("local[1]").set("spark.local.dir","/fasttmp/spark").
+        SparkConf conf = new SparkConf().setAppName("serverApp").setMaster("local[6]").set("spark.local.dir","/fasttmp/spark").
                 set("spark.driver.allowMultipleContexts","true").set("spark.ui.enabled", "false").
                 set("spark.streaming.unpersist","true");//set("spark.cleaner.ttl", "5200");
+        conf.set("spark.scheduler.allocation.file", "pools.xml");
         JavaSparkContext sparkContext = new JavaSparkContext(conf);
 
 

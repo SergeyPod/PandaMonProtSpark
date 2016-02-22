@@ -99,11 +99,14 @@ public class DataProvider {
 
         final BigDecimal previousUpdateTime = new BigDecimal(0);
         //JavaSparkContext sparkContext = new JavaSparkContext(conf);
+
         sparkContext.setLogLevel("ERROR");
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
+        sparkContext.setLocalProperty("spark.scheduler.pool","analysis");
 
 
-        while (true) {
+        while (true)
+        {
 
             System.out.println("Update Started:" + new Date());
 

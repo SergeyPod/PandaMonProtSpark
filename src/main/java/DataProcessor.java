@@ -43,6 +43,8 @@ public class DataProcessor {
         //sparkContext.setLogLevel("ERROR");
 
         sparkContext.setLocalProperty("spark.driver.allowMultipleContexts","true");
+        sparkContext.setLocalProperty("spark.scheduler.allocation.file", "transfer");
+
 
         final SQLContext sqlContext = new SQLContext(sparkContext);
 
