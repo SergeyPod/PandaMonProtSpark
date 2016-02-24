@@ -78,7 +78,7 @@ public class DataProcessor {
         final Accumulator<Map<String, Integer>> errorsSummaryAccBySiteJobs = sparkContext.accumulator(new HashMap<String, Integer>(), "errorsSummaryAccBySiteJobs", new MapIntegerAccumulator());
         final Accumulator<Map<BigDecimal, Integer>> errorSummaryerrsByTaskJobs = sparkContext.accumulator(new HashMap<BigDecimal, Integer>(), "ErrorSummaryerrsByTaskJobs", new MapIntegerAccumulator());
 
-        ErrorsSummaryProcessorMap map = new ErrorsSummaryProcessorMap(ErrorSummaryJSONRequest query);
+        ErrorsSummaryProcessorMap map = new ErrorsSummaryProcessorMap(query);
         map.seterrorSummaryerrsByTime(errorsSummaryAccByTime);
         map.setErrorsSummaryAccByCount(errorsSummaryAccByCount);
         map.setErrorsSummaryAccBySite(errorsSummaryAccBySite);

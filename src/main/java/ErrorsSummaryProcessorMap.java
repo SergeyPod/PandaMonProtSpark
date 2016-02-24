@@ -108,7 +108,7 @@ public class ErrorsSummaryProcessorMap implements VoidFunction<Row> {
                 if not job[f] in sumd[f]: sumd[f][job[f]] = 0
                 sumd[f][job[f]] += 1
 
-                
+
 
 */
 
